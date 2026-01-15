@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/medicine_provider.dart';
 import '../widgets/medicine_tile.dart';
 import '../utils/app_colors.dart';
+import '../services/notification_service.dart';
 import 'add_medicine_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -58,6 +59,42 @@ class HomeScreen extends StatelessWidget {
         ),
         backgroundColor: AppColors.teal,
         elevation: 0,
+        actions: [
+          // Immediate test notification
+          IconButton(
+            icon: const Icon(Icons.notifications, color: AppColors.white),
+            tooltip: 'Test Now',
+            onPressed: () async {
+              await NotificationService().showTestNotification();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Test notification sent NOW!'),
+                    duration: Duration(seconds: 2),
+                    backgroundColor: AppColors.teal,
+                  ),
+                );
+              }
+            },
+          ),
+          // Scheduled test notification (30 seconds)
+          IconButton(
+            icon: const Icon(Icons.alarm, color: AppColors.white),
+            tooltip: 'Test 30s',
+            onPressed: () async {
+              await NotificationService().showTestScheduledNotification();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('⏰ Notification scheduled for 30 seconds from now!'),
+                    duration: Duration(seconds: 3),
+                    backgroundColor: AppColors.orange,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
       body: Consumer<MedicineProvider>(
         builder: (context, provider, child) {
