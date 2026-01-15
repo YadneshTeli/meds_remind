@@ -7,21 +7,33 @@ import 'services/notification_service.dart';
 import 'utils/app_colors.dart';
 
 void main() async {
+  print('🚀 [Main] Starting Medicine Reminder App...');
   WidgetsFlutterBinding.ensureInitialized();
+  print('✅ [Main] Flutter binding initialized');
   
-  // Initialize services
-  final storageService = StorageService();
-  await storageService.init();
-  
-  final notificationService = NotificationService();
-  await notificationService.init();
+  try {
+    // Initialize services
+    print('📦 [Main] Initializing services...');
+    final storageService = StorageService();
+    await storageService.init();
+    
+    final notificationService = NotificationService();
+    await notificationService.init();
+    
+    print('✅ [Main] All services initialized successfully');
+    print('🎬 [Main] Launching app...');
 
-  runApp(
-    MyApp(
-      storageService: storageService,
-      notificationService: notificationService,
-    ),
-  );
+    runApp(
+      MyApp(
+        storageService: storageService,
+        notificationService: notificationService,
+      ),
+    );
+  } catch (e, stackTrace) {
+    print('❌ [Main] CRITICAL ERROR during app initialization: $e');
+    print('Stack trace: $stackTrace');
+    rethrow;
+  }
 }
 
 class MyApp extends StatelessWidget {

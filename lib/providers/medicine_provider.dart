@@ -14,6 +14,7 @@ class MedicineProvider extends ChangeNotifier {
     required NotificationService notificationService,
   })  : _storageService = storageService,
         _notificationService = notificationService {
+    print('🎯 [MedicineProvider] Initializing provider...');
     loadMedicines();
   }
 
@@ -29,8 +30,15 @@ class MedicineProvider extends ChangeNotifier {
 
   // Load medicines from storage
   Future<void> loadMedicines() async {
-    _medicines = _storageService.getAllMedicines();
-    notifyListeners();
+    print('📥 [MedicineProvider] Loading medicines from storage...');
+    try {
+      _medicines = _storageService.getAllMedicines();
+      print('✅ [MedicineProvider] Loaded ${_medicines.length} medicines');
+      notifyListeners();
+    } catch (e) {
+      print('❌ [MedicineProvider] Error loading medicines: $e');
+      rethrow;
+    }
   }
 
   // Add a new medicine
@@ -39,42 +47,70 @@ class MedicineProvider extends ChangeNotifier {
     required String dose,
     required DateTime time,
   }) async {
-    final medicine = Medicine(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      dose: dose,
-      time: time,
-    );
+    print('➕ [MedicineProvider] Adding new medicine: $name');
+    print('   Dose: $dose');
+    print('   Time: $time');
+    
+    try {
+      final medicine = Medicine(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        dose: dose,
+        time: time,
+      );
+      print('   Generated ID: ${medicine.id}');
 
-    await _storageService.addMedicine(medicine);
-    await _notificationService.scheduleMedicineNotification(medicine);
+      await _storageService.addMedicine(medicine);
+      await _notificationService.scheduleMedicineNotification(medicine);
 
-    _medicines.add(medicine);
-    notifyListeners();
+      _medicines.add(medicine);
+      notifyListeners();
+      print('✅ [MedicineProvider] Medicine added and notification scheduled');
+    } catch (e, stackTrace) {
+      print('❌ [MedicineProvider] Error adding medicine: $e');
+      print('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   // Update an existing medicine
   Future<void> updateMedicine(Medicine medicine) async {
-    await _storageService.updateMedicine(medicine);
-    
-    // Cancel old notification and schedule new one
-    await _notificationService.cancelMedicineNotification(medicine.id);
-    await _notificationService.scheduleMedicineNotification(medicine);
+    print('✏️ [MedicineProvider] Updating medicine: ${medicine.name} (ID: ${medicine.id})');
+    try {
+      await _storageService.updateMedicine(medicine);
+      
+      // Cancel old notification and schedule new one
+      await _notificationService.cancelMedicineNotification(medicine.id);
+      await _notificationService.scheduleMedicineNotification(medicine);
 
-    final index = _medicines.indexWhere((m) => m.id == medicine.id);
-    if (index != -1) {
-      _medicines[index] = medicine;
-      notifyListeners();
+      final index = _medicines.indexWhere((m) => m.id == medicine.id);
+      if (index != -1) {
+        _medicines[index] = medicine;
+        notifyListeners();
+        print('✅ [MedicineProvider] Medicine updated successfully');
+      } else {
+        print('⚠️ [MedicineProvider] Medicine not found in list');
+      }
+    } catch (e) {
+      print('❌ [MedicineProvider] Error updating medicine: $e');
+      rethrow;
     }
   }
 
   // Delete a medicine
   Future<void> deleteMedicine(String id) async {
-    await _storageService.deleteMedicine(id);
-    await _notificationService.cancelMedicineNotification(id);
+    print('🗑️ [MedicineProvider] Deleting medicine ID: $id');
+    try {
+      await _storageService.deleteMedicine(id);
+      await _notificationService.cancelMedicineNotification(id);
 
-    _medicines.removeWhere((m) => m.id == id);
-    notifyListeners();
+      _medicines.removeWhere((m) => m.id == id);
+      notifyListeners();
+      print('✅ [MedicineProvider] Medicine deleted successfully');
+    } catch (e) {
+      print('❌ [MedicineProvider] Error deleting medicine: $e');
+      rethrow;
+    }
   }
 
   // Get a specific medicine

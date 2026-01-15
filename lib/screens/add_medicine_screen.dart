@@ -65,11 +65,15 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
   }
 
   Future<void> _saveMedicine() async {
+    print('💊 [AddMedicineScreen] Attempting to save medicine...');
+    
     if (!_formKey.currentState!.validate()) {
+      print('⚠️ [AddMedicineScreen] Form validation failed');
       return;
     }
 
     if (_selectedTime == null) {
+      print('⚠️ [AddMedicineScreen] No time selected');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a time'),
@@ -78,6 +82,11 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
       );
       return;
     }
+
+    print('📝 [AddMedicineScreen] Form validated successfully');
+    print('   Name: ${_nameController.text.trim()}');
+    print('   Dose: ${_doseController.text.trim()}');
+    print('   Time: $_selectedTime');
 
     setState(() {
       _isLoading = true;
@@ -89,6 +98,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
         dose: _doseController.text.trim(),
         time: _selectedTime!,
       );
+      print('✅ [AddMedicineScreen] Medicine saved successfully');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -99,7 +109,9 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
         );
         Navigator.of(context).pop();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [AddMedicineScreen] Error saving medicine: $e');
+      print('Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
