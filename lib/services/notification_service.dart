@@ -114,8 +114,8 @@ class NotificationService {
       'medicine_reminders_v2',
       'Medicine Reminders',
       channelDescription: 'Notifications for medicine reminders',
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max, // Changed to max to match channel importance
+      priority: Priority.max, // Changed to max for highest priority
       showWhen: true,
       playSound: true,
       enableVibration: true,
@@ -123,6 +123,9 @@ class NotificationService {
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
+      autoCancel: false, // Don't auto-dismiss - user must acknowledge
+      ongoing: false, // Allow swiping away after acknowledgment
+      ticker: 'Medicine Reminder', // Text shown in status bar
     );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
@@ -225,8 +228,8 @@ class NotificationService {
       'medicine_reminders_v2',
       'Medicine Reminders',
       channelDescription: 'Notifications for medicine reminders',
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max,
+      priority: Priority.max,
       playSound: true,
       enableVibration: true,
       enableLights: true,
@@ -265,8 +268,8 @@ class NotificationService {
       'medicine_reminders_v2',
       'Medicine Reminders',
       channelDescription: 'Notifications for medicine reminders',
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max,
+      priority: Priority.max,
       showWhen: true,
       playSound: true,
       enableVibration: true,
@@ -274,6 +277,7 @@ class NotificationService {
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
+      autoCancel: false,
     );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
