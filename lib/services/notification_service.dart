@@ -16,11 +16,47 @@ class NotificationService {
     print('🔔 [NotificationService] Initializing notification service...');
     
     try {
-      // Initialize timezone
+      // Initialize timezone - use system timezone
       tz.initializeTimeZones();
-      final location = tz.getLocation('Asia/Kolkata');
-      tz.setLocalLocation(location);
-      print('🌍 [NotificationService] Timezone initialized to: ${tz.local.name}');
+      
+      // Get the device's local timezone name
+      final String timeZoneName = DateTime.now().timeZoneName;
+      final String timeZoneOffset = DateTime.now().timeZoneOffset.toString();
+      
+      print('🌍 [NotificationService] Device timezone: $timeZoneName (UTC offset: $timeZoneOffset)');
+      
+      // Try to use the system timezone, fallback to UTC if not found
+      try {
+        // Common timezone mappings for Android/iOS
+        String tzLocation;
+        if (timeZoneName == 'IST') {
+          tzLocation = 'Asia/Kolkata';
+        } else if (timeZoneName == 'PST' || timeZoneName == 'PDT') {
+          tzLocation = 'America/Los_Angeles';
+        } else if (timeZoneName == 'EST' || timeZoneName == 'EDT') {
+          tzLocation = 'America/New_York';
+        } else if (timeZoneName == 'GMT' || timeZoneName == 'UTC') {
+          tzLocation = 'UTC';
+        } else {
+          // Try to infer from offset
+          final offset = DateTime.now().timeZoneOffset;
+          if (offset.inHours == 5 && offset.inMinutes == 330) {
+            tzLocation = 'Asia/Kolkata'; // IST
+          } else if (offset.inHours == 0) {
+            tzLocation = 'UTC';
+          } else {
+            // Default to UTC if we can't determine
+            tzLocation = 'UTC';
+          }
+        }
+        
+        final location = tz.getLocation(tzLocation);
+        tz.setLocalLocation(location);
+        print('✅ [NotificationService] Timezone set to: ${tz.local.name}');
+      } catch (e) {
+        print('⚠️ [NotificationService] Could not find timezone location, using UTC: $e');
+        tz.setLocalLocation(tz.getLocation('UTC'));
+      }
 
       // Create notification channel for Android 8.0+
       const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -218,6 +254,24 @@ class NotificationService {
   // Get list of pending notifications
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
     return await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
+  }
+
+  // Debug method: Print all pending notifications
+  Future<void> debugPrintPendingNotifications() async {
+    print('📋 [NotificationService] Checking pending notifications...');
+    final pending = await getPendingNotifications();
+    print('📊 [NotificationService] Total pending: ${pending.length}');
+    
+    if (pending.isEmpty) {
+      print('⚠️ [NotificationService] No pending notifications found!');
+    } else {
+      for (var notification in pending) {
+        print('   - ID: ${notification.id}');
+        print('     Title: ${notification.title}');
+        print('     Body: ${notification.body}');
+        print('     Payload: ${notification.payload}');
+      }
+    }
   }
 
   // Test notification (for debugging)
