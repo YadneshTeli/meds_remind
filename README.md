@@ -251,20 +251,6 @@ adb logcat | grep "MedicineProvider"
 - Hot restart: `R` in terminal or Shift+Ctrl+F5 in IDE
 - Full restart: `flutter run` again
 
-## 📋 Git Commit History
-
-This project was developed incrementally with logical commit batches:
-1. Storage service logging implementation
-2. App lifecycle logging
-3. Android SDK configuration (minSdk, targetSdk)
-4. AndroidManifest receiver addition
-5. MainActivity enhancement with notification channels
-6. Core notification service implementation
-7. UI enhancements (test buttons, home screen)
-8. Platform files update
-9. Notification importance upgrade to MAX
-10. Timezone auto-detection feature
-
 ## 🤝 Contributing
 
 This is an assignment project, but suggestions are welcome:
