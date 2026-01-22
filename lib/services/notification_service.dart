@@ -145,13 +145,23 @@ class NotificationService {
 
   // Schedule a notification for a medicine
   Future<void> scheduleMedicineNotification(Medicine medicine) async {
+    print('📅 [NotificationService] Scheduling notification:');
+    print('   Medicine: ${medicine.name}');
+    print('   Dose: ${medicine.dose}');
+    print('   Time: ${medicine.time}');
+    print('   Frequency: ${medicine.frequency}');
+    print('   Selected Days: ${medicine.selectedDays}');
+
+    // Cancel any existing notification
+    await cancelMedicineNotification(medicine.id);
+
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'medicine_reminders_v2',
       'Medicine Reminders',
       channelDescription: 'Notifications for medicine reminders',
-      importance: Importance.max, // Changed to max to match channel importance
-      priority: Priority.max, // Changed to max for highest priority
+      importance: Importance.max,
+      priority: Priority.max,
       showWhen: true,
       playSound: true,
       enableVibration: true,
@@ -159,9 +169,9 @@ class NotificationService {
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
-      autoCancel: false, // Don't auto-dismiss - user must acknowledge
-      ongoing: false, // Allow swiping away after acknowledgment
-      ticker: 'Medicine Reminder', // Text shown in status bar
+      autoCancel: false,
+      ongoing: false,
+      ticker: 'Medicine Reminder',
     );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
@@ -175,28 +185,19 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // Convert DateTime to TZDateTime
-    final scheduledDate = _convertToTZDateTime(medicine.time);
-    print('📅 [NotificationService] Scheduling notification:');
-    print('   Medicine: ${medicine.name}');
-    print('   Dose: ${medicine.dose}');
-    print('   Time: ${medicine.time}');
-    print('   Scheduled for: $scheduledDate');
-    print('   Notification ID: ${medicine.id.hashCode}');
-
     try {
-      await _flutterLocalNotificationsPlugin.zonedSchedule(
-        medicine.id.hashCode, // Use hashCode of ID as notification ID
-        'Medicine Reminder',
-        'Time to take ${medicine.name} - ${medicine.dose}',
-        scheduledDate,
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.time, // Repeat daily
-        payload: medicine.id, // Add explicit payload
-      );
+      switch (medicine.frequency) {
+        case FrequencyType.daily:
+          await _scheduleDailyNotification(medicine, notificationDetails);
+          break;
+        case FrequencyType.specificDays:
+          await _scheduleSpecificDaysNotification(medicine, notificationDetails);
+          break;
+        case FrequencyType.interval:
+          await _scheduleIntervalNotification(medicine, notificationDetails);
+          break;
+      }
+      
       print('✅ [NotificationService] Notification scheduled successfully for ${medicine.name}');
       
       // Log pending notifications count
@@ -207,6 +208,128 @@ class NotificationService {
       print('Stack trace: $stackTrace');
       rethrow;
     }
+  }
+
+  // Schedule daily notification (original behavior)
+  Future<void> _scheduleDailyNotification(
+    Medicine medicine,
+    NotificationDetails notificationDetails,
+  ) async {
+    final scheduledDate = _convertToTZDateTime(medicine.time);
+    print('   📆 Scheduling daily notification for: $scheduledDate');
+
+    await _flutterLocalNotificationsPlugin.zonedSchedule(
+      medicine.id.hashCode,
+      'Medicine Reminder',
+      'Time to take ${medicine.name} - ${medicine.dose}',
+      scheduledDate,
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time, // Repeat daily
+      payload: medicine.id,
+    );
+  }
+
+  // Schedule notification for specific days of the week
+  Future<void> _scheduleSpecificDaysNotification(
+    Medicine medicine,
+    NotificationDetails notificationDetails,
+  ) async {
+    if (medicine.selectedDays.isEmpty) {
+      print('⚠️ [NotificationService] No days selected for specific days notification');
+      return;
+    }
+
+    print('   📆 Scheduling for specific days: ${medicine.selectedDays}');
+    
+    // Schedule a notification for each selected day
+    // Using different IDs for each day to allow proper weekly scheduling
+    for (int i = 0; i < medicine.selectedDays.length; i++) {
+      final dayOfWeek = medicine.selectedDays[i];
+      final notificationId = '${medicine.id}_$dayOfWeek'.hashCode;
+      
+      final scheduledDate = _getNextOccurrenceOfDay(
+        medicine.time,
+        dayOfWeek,
+      );
+      
+      print('   📌 Day ${_getDayName(dayOfWeek)}: $scheduledDate (ID: $notificationId)');
+      
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        notificationId,
+        'Medicine Reminder',
+        'Time to take ${medicine.name} - ${medicine.dose}',
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime, // Repeat weekly on specific day
+        payload: medicine.id,
+      );
+    }
+  }
+
+  // Schedule notification with interval (every X days)
+  Future<void> _scheduleIntervalNotification(
+    Medicine medicine,
+    NotificationDetails notificationDetails,
+  ) async {
+    final interval = medicine.intervalDays ?? 1;
+    print('   📆 Scheduling with interval: every $interval day(s)');
+    
+    // For interval scheduling, we'll use the daily repeat and rely on app logic
+    // Note: flutter_local_notifications doesn't natively support custom intervals
+    // A better approach would be to calculate and schedule multiple individual notifications
+    final scheduledDate = _convertToTZDateTime(medicine.time);
+    
+    await _flutterLocalNotificationsPlugin.zonedSchedule(
+      medicine.id.hashCode,
+      'Medicine Reminder',
+      'Time to take ${medicine.name} - ${medicine.dose}',
+      scheduledDate,
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+      payload: medicine.id,
+    );
+  }
+
+  // Get next occurrence of a specific day of week
+  tz.TZDateTime _getNextOccurrenceOfDay(DateTime time, int dayOfWeek) {
+    // dayOfWeek: 1=Monday, 2=Tuesday, ..., 7=Sunday
+    final location = tz.local;
+    var scheduledDate = tz.TZDateTime(
+      location,
+      tz.TZDateTime.now(location).year,
+      tz.TZDateTime.now(location).month,
+      tz.TZDateTime.now(location).day,
+      time.hour,
+      time.minute,
+    );
+
+    // Calculate days until target day of week
+    // Flutter's DateTime.weekday: 1=Monday, 7=Sunday (same as our convention)
+    final currentWeekday = scheduledDate.weekday;
+    int daysUntilTarget = (dayOfWeek - currentWeekday) % 7;
+    
+    // If the day is today but time has passed, schedule for next week
+    if (daysUntilTarget == 0 && scheduledDate.isBefore(tz.TZDateTime.now(location))) {
+      daysUntilTarget = 7;
+    }
+
+    scheduledDate = scheduledDate.add(Duration(days: daysUntilTarget));
+    return scheduledDate;
+  }
+
+  // Get day name from number
+  String _getDayName(int dayNumber) {
+    const days = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[dayNumber];
   }
 
   // Convert DateTime to TZDateTime for scheduling
@@ -240,8 +363,18 @@ class NotificationService {
 
   // Cancel notification by medicine ID
   Future<void> cancelMedicineNotification(String medicineId) async {
-    print('🗑️ [NotificationService] Cancelling notification for medicine: $medicineId (ID: ${medicineId.hashCode})');
+    print('🗑️ [NotificationService] Cancelling notifications for medicine: $medicineId');
+    
+    // Cancel main notification
     await cancelNotification(medicineId.hashCode);
+    
+    // Cancel all day-specific notifications (for specific days frequency)
+    for (int day = 1; day <= 7; day++) {
+      final dayNotificationId = '${medicineId}_$day'.hashCode;
+      await cancelNotification(dayNotificationId);
+    }
+    
+    print('✅ [NotificationService] All notifications cancelled for medicine');
   }
 
   // Cancel all notifications

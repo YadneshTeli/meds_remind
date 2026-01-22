@@ -141,6 +141,7 @@ class HomeScreen extends StatelessWidget {
                 name: medicine.name,
                 dose: medicine.dose,
                 time: medicine.time,
+                frequency: medicine.getFrequencyDisplay(),
                 onDelete: () => _showDeleteDialog(
                   context,
                   medicine.id,

@@ -13,7 +13,8 @@ class StorageService {
       print('📦 [StorageService] Hive initialized');
       
       Hive.registerAdapter(MedicineAdapter());
-      print('🔧 [StorageService] Medicine adapter registered');
+      Hive.registerAdapter(FrequencyTypeAdapter());
+      print('🔧 [StorageService] Medicine and FrequencyType adapters registered');
       
       _box = await Hive.openBox<Medicine>(_boxName);
       print('✅ [StorageService] Storage box opened: $_boxName');

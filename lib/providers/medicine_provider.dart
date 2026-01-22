@@ -46,10 +46,16 @@ class MedicineProvider extends ChangeNotifier {
     required String name,
     required String dose,
     required DateTime time,
+    FrequencyType frequency = FrequencyType.daily,
+    List<int> selectedDays = const [],
+    int? intervalDays,
   }) async {
     print('➕ [MedicineProvider] Adding new medicine: $name');
     print('   Dose: $dose');
     print('   Time: $time');
+    print('   Frequency: $frequency');
+    print('   Selected Days: $selectedDays');
+    print('   Interval: $intervalDays');
     
     try {
       final medicine = Medicine(
@@ -57,6 +63,9 @@ class MedicineProvider extends ChangeNotifier {
         name: name,
         dose: dose,
         time: time,
+        frequency: frequency,
+        selectedDays: selectedDays,
+        intervalDays: intervalDays,
       );
       print('   Generated ID: ${medicine.id}');
 

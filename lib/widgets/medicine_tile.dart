@@ -4,6 +4,7 @@ class MedicineTile extends StatelessWidget {
   final String name;
   final String dose;
   final DateTime time;
+  final String frequency; // Frequency display string
   final VoidCallback onDelete;
 
   const MedicineTile({
@@ -11,6 +12,7 @@ class MedicineTile extends StatelessWidget {
     required this.name,
     required this.dose,
     required this.time,
+    required this.frequency,
     required this.onDelete,
   });
 
@@ -55,12 +57,36 @@ class MedicineTile extends StatelessWidget {
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            'Dose: $dose',
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF757575),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Dose: $dose',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF757575),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.repeat,
+                    size: 14,
+                    color: Color(0xFF008080),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    frequency,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF008080),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
         trailing: Row(

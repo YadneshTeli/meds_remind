@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/medicine.dart';
 import '../providers/medicine_provider.dart';
 import '../utils/app_colors.dart';
 
@@ -16,6 +17,11 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
   final _doseController = TextEditingController();
   DateTime? _selectedTime;
   bool _isLoading = false;
+  
+  // Frequency fields
+  FrequencyType _frequencyType = FrequencyType.daily;
+  final Set<int> _selectedDays = {}; // 1=Monday to 7=Sunday
+  int _intervalDays = 1;
 
   @override
   void dispose() {
@@ -83,10 +89,25 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
       return;
     }
 
+    // Validate frequency-specific fields
+    if (_frequencyType == FrequencyType.specificDays && _selectedDays.isEmpty) {
+      print('⚠️ [AddMedicineScreen] No days selected for specific days frequency');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one day'),
+          backgroundColor: AppColors.red,
+        ),
+      );
+      return;
+    }
+
     print('📝 [AddMedicineScreen] Form validated successfully');
     print('   Name: ${_nameController.text.trim()}');
     print('   Dose: ${_doseController.text.trim()}');
     print('   Time: $_selectedTime');
+    print('   Frequency: $_frequencyType');
+    print('   Selected Days: $_selectedDays');
+    print('   Interval: $_intervalDays');
 
     setState(() {
       _isLoading = true;
@@ -97,6 +118,9 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
         name: _nameController.text.trim(),
         dose: _doseController.text.trim(),
         time: _selectedTime!,
+        frequency: _frequencyType,
+        selectedDays: _selectedDays.toList()..sort(),
+        intervalDays: _frequencyType == FrequencyType.interval ? _intervalDays : null,
       );
       print('✅ [AddMedicineScreen] Medicine saved successfully');
 
@@ -308,6 +332,136 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Frequency Selector
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Frequency',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.teal,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Daily option
+                      RadioListTile<FrequencyType>(
+                        title: const Text('Every day'),
+                        value: FrequencyType.daily,
+                        groupValue: _frequencyType,
+                        activeColor: AppColors.teal,
+                        onChanged: (value) {
+                          setState(() {
+                            _frequencyType = value!;
+                          });
+                        },
+                      ),
+                      
+                      // Specific days option
+                      RadioListTile<FrequencyType>(
+                        title: const Text('Specific days'),
+                        value: FrequencyType.specificDays,
+                        groupValue: _frequencyType,
+                        activeColor: AppColors.teal,
+                        onChanged: (value) {
+                          setState(() {
+                            _frequencyType = value!;
+                          });
+                        },
+                      ),
+                      
+                      // Show day checkboxes when specific days is selected
+                      if (_frequencyType == FrequencyType.specificDays) ...[
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _buildDayChip('Mon', 1),
+                              _buildDayChip('Tue', 2),
+                              _buildDayChip('Wed', 3),
+                              _buildDayChip('Thu', 4),
+                              _buildDayChip('Fri', 5),
+                              _buildDayChip('Sat', 6),
+                              _buildDayChip('Sun', 7),
+                            ],
+                          ),
+                        ),
+                      ],
+                      
+                      // Interval option
+                      RadioListTile<FrequencyType>(
+                        title: const Text('Every X days'),
+                        value: FrequencyType.interval,
+                        groupValue: _frequencyType,
+                        activeColor: AppColors.teal,
+                        onChanged: (value) {
+                          setState(() {
+                            _frequencyType = value!;
+                          });
+                        },
+                      ),
+                      
+                      // Show interval selector when interval is selected
+                      if (_frequencyType == FrequencyType.interval) ...[
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              const Text('Every'),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 80,
+                                child: TextFormField(
+                                  initialValue: _intervalDays.toString(),
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                        color: AppColors.teal,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    final days = int.tryParse(value);
+                                    if (days != null && days > 0) {
+                                      setState(() {
+                                        _intervalDays = days;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(_intervalDays == 1 ? 'day' : 'days'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 32),
 
               // Save Button
@@ -345,6 +499,30 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Build day selection chip
+  Widget _buildDayChip(String label, int dayNumber) {
+    final isSelected = _selectedDays.contains(dayNumber);
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          if (selected) {
+            _selectedDays.add(dayNumber);
+          } else {
+            _selectedDays.remove(dayNumber);
+          }
+        });
+      },
+      selectedColor: AppColors.teal,
+      checkmarkColor: AppColors.white,
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.white : AppColors.black,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
   }
