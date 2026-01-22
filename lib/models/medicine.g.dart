@@ -21,8 +21,8 @@ class MedicineAdapter extends TypeAdapter<Medicine> {
       name: fields[1] as String,
       dose: fields[2] as String,
       time: fields[3] as DateTime,
-      frequency: fields[4] as FrequencyType,
-      selectedDays: (fields[5] as List).cast<int>(),
+      frequency: fields[4] as FrequencyType? ?? FrequencyType.daily,
+      selectedDays: fields[5] != null ? (fields[5] as List).cast<int>() : [],
       intervalDays: fields[6] as int?,
     );
   }

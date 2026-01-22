@@ -76,12 +76,15 @@ class MedicineTile extends StatelessWidget {
                     color: Color(0xFF008080),
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    frequency,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF008080),
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      frequency,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF008080),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
